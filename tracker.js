@@ -19,17 +19,29 @@ function pickWinner() {
 }
 
 function trackRetweets(tweetId) {
-  stream = T.stream("statuses/filter", { track: `retweet ${tweetId}` });
-
-  stream.on("tweet", (tweet) => {
-    if (tweet.retweeted_status && tweet.retweeted_status.id_str === tweetId) {
-      console.log(`Retweet by: ${tweet.user.screen_name}`);
-      retweeters.push(tweet.user.screen_name);
+  T.get("statuses/show/:id", { id: tweetId }, (err, data, response) => {
+    if (err) {
+      console.error("Error fetching tweet:", err);
+      return;
     }
-  });
 
-  stream.on("error", (error) => {
-    console.error("Error:", error);
+    const userId = data.user.id_str;
+
+    stream = T.stream("statuses/filter", { follow: userId });
+
+    stream.on("tweet", (tweet) => {
+      if (
+        tweet.retweeted_status &&
+        tweet.retweeted_status.id_str === tweetId
+      ) {
+        console.log(`Retweet by: ${tweet.user.screen_name}`);
+        retweeters.push(tweet.user.screen_name);
+      }
+    });
+
+    stream.on("error", (error) => {
+      console.error("Error:", error);
+    });
   });
 }
 
